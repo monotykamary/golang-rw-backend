@@ -34,5 +34,3 @@ gen-swagger:
 .PHONY: gen-mock
 gen-mock:
 	@mockgen -source=./repo/repo.go -destination=./repo/mocks/repo.go
-	@mockgen -source=./services/gameplatform/game_platform.go -destination=./services/gameplatform/mocks/repo.go
-	@mockgen -source=./services/email/email.go -destination=./services/email/mocks/repo.go
