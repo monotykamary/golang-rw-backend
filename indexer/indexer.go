@@ -13,21 +13,23 @@ import (
 )
 
 type IndexService struct {
-	cfg      config.Config
-	store    repo.DBRepo
-	repo     *repo.Repo
-	usecases []usecase.IUsecase
+	cfg         config.Config
+	store       repo.DBRepo
+	repo        *repo.Repo
+	redisClient *redis.Client
+	usecases    []usecase.IUsecase
 }
 
-func NewIndexService(cfg config.Config, store repo.DBRepo, client redis.Client) (*IndexService, error) {
+func NewIndexService(cfg config.Config, store repo.DBRepo, redisClient redis.Client) (*IndexService, error) {
 	repo := pg.NewRepo()
 	usecases := make([]usecase.IUsecase, 0)
-	usecases = append(usecases, usecase.NewBookingUsecase(cfg, store, &client))
+	usecases = append(usecases, usecase.NewBookingUsecase(cfg, store, &redisClient))
 
-	return &IndexService{cfg, store, repo, usecases}, nil
+	return &IndexService{cfg, store, repo, &redisClient, usecases}, nil
 }
 
 func (svc *IndexService) Index() {
+	ctx := context.Background()
 	stream, err := ConsumeStream(svc.cfg, "bookingGroup", "node")
 
 	if err != nil {
@@ -37,13 +39,18 @@ func (svc *IndexService) Index() {
 OUTER:
 	for _, item := range stream {
 		for _, message := range item.Messages {
+			id := message.ID
 			log := message.Values
+
 			for _, usecase := range svc.usecases {
 				if usecase.ShouldProcessLog(log) {
 					err := usecase.Process(log)
 					if err != nil {
 						zap.L().Fatal("panic when process block", zap.Any("debug data", log))
 					}
+
+					streamName, groupName := usecase.GetStreamInfo()
+					svc.redisClient.XAck(ctx, streamName, groupName, id)
 					continue OUTER
 				}
 			}

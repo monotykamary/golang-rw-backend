@@ -31,11 +31,16 @@ type BookingUsecase struct {
 	store  repo.DBRepo
 	repo   *repo.Repo
 	client *redis.Client
+	stream string
+	group  string
 }
 
 func NewBookingUsecase(cfg config.Config, store repo.DBRepo, client *redis.Client) *BookingUsecase {
 	repo := pg.NewRepo()
-	bookingUsecase := &BookingUsecase{cfg, store, repo, client}
+	stream := "booking"
+	group := "bookingGroup"
+
+	bookingUsecase := &BookingUsecase{cfg, store, repo, client, stream, group}
 	return bookingUsecase
 }
 
@@ -80,6 +85,12 @@ func (uc BookingUsecase) Process(log map[string]interface{}) error {
 func (uc BookingUsecase) ShouldProcessLog(log map[string]interface{}) bool {
 	// doesn't matter for our mock case
 	return true
+}
+
+func (uc BookingUsecase) GetStreamInfo() (stream string, group string) {
+	stream = uc.stream
+	group = uc.group
+	return
 }
 
 func (uc BookingUsecase) Name() string {
