@@ -7,9 +7,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
-	"github.com/monotykamary/golang-rw-backend/config"
 	"github.com/monotykamary/golang-rw-backend/model/errors"
-	"github.com/monotykamary/golang-rw-backend/repo"
 	"github.com/monotykamary/golang-rw-backend/util"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
@@ -106,41 +104,39 @@ func (h *Handler) GetBookingInfoHandler(c echo.Context) error {
 // @Success 200 {object} handler.getBookingInfoResponse	"ok"
 // @Failure 400 {object} errors.Error
 // @Router /api/v1/booking/queue [post]
-func (h *Handler) QueueBookingHandler(cfg config.Config, s repo.DBRepo) func(c echo.Context) error {
+func (h *Handler) QueueBookingHandler(c echo.Context) error {
 	ctx := context.Background()
-	addr := cfg.RedisHost + ":" + cfg.RedisPort
+	addr := h.cfg.RedisHost + ":" + h.cfg.RedisPort
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     addr,
-		Password: cfg.RedisPass,
+		Password: h.cfg.RedisPass,
 		DB:       0,
 	})
 
-	return func(c echo.Context) error {
-		var request bookingQueueRequest
-		if err := c.Bind(&request); err != nil {
-			zap.L().Sugar().Infof("[handler.UpdateUserHandler] c.Bind()")
-			return util.HandleError(c, err)
-		}
-
-		event := request.Event
-		userId := request.UserId
-		bookingId := request.BookingId
-
-		_, err := redisClient.XAdd(ctx, &redis.XAddArgs{
-			Stream: "booking",
-			Values: map[string]interface{}{
-				"event":     event,
-				"userId":    userId,
-				"bookingId": bookingId,
-			},
-		}).Result()
-
-		if err != nil {
-			zap.L().Error("cannot queue booking", zap.Error(err))
-		}
-
-		return c.JSON(http.StatusOK, &getBookingQueueInfoResponse{
-			Data: getBookingQueueInfo{event, userId, bookingId},
-		})
+	var request bookingQueueRequest
+	if err := c.Bind(&request); err != nil {
+		zap.L().Sugar().Infof("[handler.UpdateUserHandler] c.Bind()")
+		return util.HandleError(c, err)
 	}
+
+	event := request.Event
+	userId := request.UserId
+	bookingId := request.BookingId
+
+	_, err := redisClient.XAdd(ctx, &redis.XAddArgs{
+		Stream: "booking",
+		Values: map[string]interface{}{
+			"event":     event,
+			"userId":    userId,
+			"bookingId": bookingId,
+		},
+	}).Result()
+
+	if err != nil {
+		zap.L().Error("cannot queue booking", zap.Error(err))
+	}
+
+	return c.JSON(http.StatusOK, &getBookingQueueInfoResponse{
+		Data: getBookingQueueInfo{event, userId, bookingId},
+	})
 }

@@ -22,6 +22,6 @@ func NewRoutes(e *echo.Echo, h *handler.Handler, cfg config.Config, s repo.DBRep
 	{
 		bookingGroup.GET("", h.GetBookingsHandler)
 		bookingGroup.GET("/:id", h.GetBookingInfoHandler)
-		bookingGroup.GET("/queue", h.QueueBookingHandler(cfg, s))
+		bookingGroup.GET("/queue", h.QueueBookingHandler)
 	}
 }
