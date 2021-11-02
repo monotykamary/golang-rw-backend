@@ -10,7 +10,7 @@ type Repo struct {
 type UserRepo interface {
 	GetById(s DBRepo, id string) (*model.User, error)
 	Create(s DBRepo, param model.User) (*model.User, error)
-	Update(s DBRepo, param model.User) (*model.User, error)
+	Update(s DBRepo, param model.User, value string, id string) (*model.User, error)
 	GetAll(s DBRepo) ([]model.User, error)
 }
 

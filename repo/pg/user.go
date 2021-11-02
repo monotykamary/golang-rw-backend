@@ -22,9 +22,10 @@ func (t *userRepo) Create(s repo.DBRepo, param model.User) (*model.User, error) 
 	return &param, db.Create(&param).Error
 }
 
-func (t *userRepo) Update(s repo.DBRepo, param model.User) (*model.User, error) {
+func (t *userRepo) Update(s repo.DBRepo, param model.User, value string, id string) (*model.User, error) {
 	db := s.DB()
-	return &param, db.Save(&param).Error
+	user := model.User{}
+	return &param, db.Model(&user).Where("id = ?", id).Updates(map[string]interface{}{"email": value}).Error
 }
 
 func (r *userRepo) GetAll(s repo.DBRepo) ([]model.User, error) {
