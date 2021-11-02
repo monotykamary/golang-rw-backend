@@ -1,24 +1,17 @@
 package handler
 
 import (
-	"context"
 	inerr "errors"
 	"net/http"
 
-	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/monotykamary/golang-rw-backend/model/errors"
+	redisService "github.com/monotykamary/golang-rw-backend/services/redis"
 	"github.com/monotykamary/golang-rw-backend/util"
 	uuid "github.com/satori/go.uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
-
-type bookingQueueRequest struct {
-	Event     string    `json:"event"`
-	UserId    uuid.UUID `json:"userId"`
-	BookingId uuid.UUID `json:"bookingId"`
-}
 
 type getBookingQueueInfo struct {
 	Event     string    `json:"event"`
@@ -105,38 +98,23 @@ func (h *Handler) GetBookingInfoHandler(c echo.Context) error {
 // @Failure 400 {object} errors.Error
 // @Router /api/v1/booking/queue [post]
 func (h *Handler) QueueBookingHandler(c echo.Context) error {
-	ctx := context.Background()
-	addr := h.cfg.RedisHost + ":" + h.cfg.RedisPort
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     addr,
-		Password: h.cfg.RedisPass,
-		DB:       0,
-	})
-
-	var request bookingQueueRequest
+	var request redisService.BookingQueueRequest
 	if err := c.Bind(&request); err != nil {
 		zap.L().Sugar().Infof("[handler.UpdateUserHandler] c.Bind()")
 		return util.HandleError(c, err)
 	}
 
-	event := request.Event
-	userId := request.UserId
-	bookingId := request.BookingId
-
-	_, err := redisClient.XAdd(ctx, &redis.XAddArgs{
-		Stream: "booking",
-		Values: map[string]interface{}{
-			"event":     event,
-			"userId":    userId,
-			"bookingId": bookingId,
-		},
-	}).Result()
+	_, err := h.service.Redis.XAddBooking(request)
 
 	if err != nil {
 		zap.L().Error("cannot queue booking", zap.Error(err))
 	}
 
 	return c.JSON(http.StatusOK, &getBookingQueueInfoResponse{
-		Data: getBookingQueueInfo{event, userId, bookingId},
+		Data: getBookingQueueInfo{
+			Event:     request.Event,
+			UserId:    uuid.UUID(request.UserId),
+			BookingId: uuid.UUID(request.BookingId),
+		},
 	})
 }
