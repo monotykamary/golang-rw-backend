@@ -9,7 +9,6 @@ services:
     command: >
       --requirepass "redis"
       --appendonly yes
-    restart: always
 
   rw_db:
     image: postgres:11.5
