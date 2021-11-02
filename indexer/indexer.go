@@ -30,28 +30,31 @@ func NewIndexService(cfg config.Config, store repo.DBRepo, redisClient redis.Cli
 
 func (svc *IndexService) Index() {
 	ctx := context.Background()
-	stream, err := ConsumeStream(svc.cfg, "bookingGroup", "node")
+	for {
+		stream, err := ConsumeStream(svc.cfg, "bookingGroup", "node")
 
-	if err != nil {
-		zap.L().Error("cannot read stream", zap.Error(err))
-	}
+		if err != nil {
+			zap.L().Error("cannot read stream", zap.Error(err))
+			continue
+		}
 
-OUTER:
-	for _, item := range stream {
-		for _, message := range item.Messages {
-			id := message.ID
-			log := message.Values
+	OUTER:
+		for _, item := range stream {
+			for _, message := range item.Messages {
+				id := message.ID
+				log := message.Values
 
-			for _, usecase := range svc.usecases {
-				if usecase.ShouldProcessLog(log) {
-					err := usecase.Process(log)
-					if err != nil {
-						zap.L().Fatal("panic when process block", zap.Any("debug data", log))
+				for _, usecase := range svc.usecases {
+					if usecase.ShouldProcessLog(log) {
+						err := usecase.Process(log)
+						if err != nil {
+							zap.L().Fatal("panic when process block", zap.Any("debug data", log))
+						}
+
+						streamName, groupName := usecase.GetStreamInfo()
+						svc.redisClient.XAck(ctx, streamName, groupName, id)
+						continue OUTER
 					}
-
-					streamName, groupName := usecase.GetStreamInfo()
-					svc.redisClient.XAck(ctx, streamName, groupName, id)
-					continue OUTER
 				}
 			}
 		}
