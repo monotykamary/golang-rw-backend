@@ -93,7 +93,7 @@ func (h *Handler) GetBookingInfoHandler(c echo.Context) error {
 // @Description queue booking item
 // @Accept	json
 // @Produce  json
-// @Param body body handler.bookingQueueRequest true "booking queue request"
+// @Param body body handler.getBookingQueueInfo true "get booking queue info"
 // @Success 200 {object} handler.getBookingInfoResponse	"ok"
 // @Failure 400 {object} errors.Error
 // @Router /api/v1/booking/queue [post]
