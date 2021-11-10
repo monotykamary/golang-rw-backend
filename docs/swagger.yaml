@@ -1,0 +1,202 @@
+definitions:
+  errors.Error:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  handler.getBookingInfo:
+    properties:
+      id:
+        type: string
+      status:
+        type: string
+    type: object
+  handler.getBookingInfoResponse:
+    properties:
+      data:
+        $ref: '#/definitions/handler.getBookingInfo'
+    type: object
+  handler.getBookingQueueInfo:
+    properties:
+      bookingId:
+        type: string
+      event:
+        type: string
+      userId:
+        type: string
+    type: object
+  handler.getUserInfo:
+    properties:
+      id:
+        type: string
+    type: object
+  handler.getUserInfoResponse:
+    properties:
+      data:
+        $ref: '#/definitions/handler.getUserInfo'
+    type: object
+  handler.getUsersResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/handler.getUserInfo'
+        type: array
+    type: object
+  handler.userRequest:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/booking:
+    get:
+      consumes:
+      - application/json
+      description: get all booking info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getUsersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: get all booking info
+  /api/v1/booking/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get booking info
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getBookingInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: get booking info
+  /api/v1/booking/queue:
+    post:
+      consumes:
+      - application/json
+      description: queue booking item
+      parameters:
+      - description: get booking queue info
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.getBookingQueueInfo'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getBookingInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: queue booking item
+  /api/v1/users:
+    get:
+      consumes:
+      - application/json
+      description: get all user info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getUsersResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: get all user info
+  /api/v1/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get user info
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getUserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: get user info
+  /api/v1/users/register:
+    post:
+      consumes:
+      - application/json
+      description: register as new user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getUserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: register as new user
+  /api/v1/users/update:
+    post:
+      consumes:
+      - application/json
+      description: update user info
+      parameters:
+      - description: user request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.userRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ok
+          schema:
+            $ref: '#/definitions/handler.getUserInfoResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.Error'
+      summary: update user info
+swagger: "2.0"
