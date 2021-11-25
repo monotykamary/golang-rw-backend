@@ -91,14 +91,15 @@ func (h *Handler) GetUserInfoHandler(c echo.Context) error {
 // @Failure 400 {object} errors.Error
 // @Router /api/v1/users/register [post]
 func (h *Handler) RegisterUserHandler(c echo.Context) error {
-	user, err := h.repo.User.Create(h.store, model.User{})
+	tx, done := h.store.NewTransaction()
+	user, err := h.repo.User.Create(tx, model.User{})
 	if err != nil {
 		if inerr.Is(err, gorm.ErrRecordNotFound) {
 			zap.L().Sugar().Infof("[handler.RegisterUserHandler] User.Create() user not found")
 			return util.HandleError(c, errors.ErrUserNotfound)
 		}
 		zap.L().Sugar().Infof("[handler.RegisterUserHandler] User.Create()")
-		return util.HandleError(c, errors.ErrInternalServerError)
+		return util.HandleError(c, done(errors.ErrInternalServerError))
 	}
 
 	return c.JSON(http.StatusOK, &getUserInfoResponse{Data: getUserInfo{Id: user.Id}})
