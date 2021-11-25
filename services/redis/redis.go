@@ -2,9 +2,11 @@ package redis
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/monotykamary/golang-rw-backend/config"
+	usecase "github.com/monotykamary/golang-rw-backend/indexer/usecases"
 )
 
 type RedisService interface {
@@ -35,13 +37,18 @@ func (r *redisService) XAddBooking(request BookingQueueRequest) (string, error) 
 	userId := request.UserId
 	bookingId := request.BookingId
 
+	var redisEventInterface map[string]interface{}
+	redisEventStruct := &usecase.RedisEvent{
+		Event:     event,
+		UserId:    userId,
+		BookingId: bookingId,
+	}
+	redisEventJSON, _ := json.Marshal(redisEventStruct)
+	json.Unmarshal(redisEventJSON, &redisEventInterface)
+
 	result, err := r.redisClient.XAdd(ctx, &redis.XAddArgs{
 		Stream: "booking",
-		Values: map[string]interface{}{
-			"event":     event,
-			"userId":    userId,
-			"bookingId": bookingId,
-		},
+		Values: redisEventInterface,
 	}).Result()
 
 	return result, err

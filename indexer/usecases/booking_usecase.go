@@ -1,9 +1,11 @@
 package usecase
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/google/uuid"
 	"github.com/monotykamary/golang-rw-backend/config"
 	"github.com/monotykamary/golang-rw-backend/model"
 	"github.com/monotykamary/golang-rw-backend/repo"
@@ -25,6 +27,12 @@ const (
 	triggerCancel  = "Cancel"
 	triggerRetry   = "Retry"
 )
+
+type RedisEvent struct {
+	Event     string    `json:"event"`
+	UserId    uuid.UUID `json:"userId"`
+	BookingId uuid.UUID `json:"bookingId"`
+}
 
 type BookingUsecase struct {
 	cfg    config.Config
@@ -60,10 +68,14 @@ func NewBookingStateMachine(initialState string) *stateless.StateMachine {
 	return booking
 }
 
-func (uc BookingUsecase) Process(log map[string]interface{}) error {
+func (uc BookingUsecase) Process(log *RedisEvent) error {
 	db := uc.store.DB()
 
-	id := log["bookingId"]
+	var redisEventInterface map[string]interface{}
+	redisEventJSON, _ := json.Marshal(log)
+	json.Unmarshal(redisEventJSON, &redisEventInterface)
+
+	id := redisEventInterface["bookingId"]
 	booking, err := uc.repo.Booking.GetById(uc.store, fmt.Sprintf("%v", id))
 
 	if err != nil {
@@ -71,7 +83,7 @@ func (uc BookingUsecase) Process(log map[string]interface{}) error {
 	}
 
 	stateMachine := NewBookingStateMachine(booking.Status)
-	stateMachine.Fire(log["event"])
+	stateMachine.Fire(redisEventInterface["event"])
 	currentStatus := stateMachine.MustState()
 
 	err = db.Model(booking).Update("status", currentStatus).Error
@@ -82,7 +94,7 @@ func (uc BookingUsecase) Process(log map[string]interface{}) error {
 	return nil
 }
 
-func (uc BookingUsecase) ShouldProcessLog(log map[string]interface{}) bool {
+func (uc BookingUsecase) ShouldProcessLog(log *RedisEvent) bool {
 	// doesn't matter for our mock case
 	return true
 }

@@ -1,8 +1,8 @@
 package usecase
 
 type IUsecase interface {
-	Process(log map[string]interface{}) error
-	ShouldProcessLog(log map[string]interface{}) bool
+	Process(log *RedisEvent) error
+	ShouldProcessLog(log *RedisEvent) bool
 	GetStreamInfo() (string, string)
 	Name() string
 }
