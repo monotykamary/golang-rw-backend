@@ -1,0 +1,37 @@
+version: '2.3'
+
+services:
+  rw_redis:
+    container_name: rw_redis
+    image: redis:6.2.6
+    ports:
+      - '6379:6379'
+    command: >
+      --requirepass "redis"
+      --appendonly yes
+
+  rw_db:
+    image: postgres:11.5
+    container_name: rw_db
+    ports:
+      - 5432:5432
+    networks:
+      - rw_db
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=rw_local
+
+  rw_pgadmin:
+    container_name: rw_pgadmin
+    image: dpage/pgadmin4:6.1
+    ports:
+      - '5433:80'
+    networks:
+      - rw_db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: monotykamary@example.com
+      PGADMIN_DEFAULT_PASSWORD: password
+
+networks:
+  rw_db:
+    driver: bridge

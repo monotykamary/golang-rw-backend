@@ -1,0 +1,17 @@
+local:
+  dialect: postgres
+  datasource: user=postgres password=postgres host=127.0.0.1 port=5432 dbname=rw_local sslmode=disable
+  dir: migrations/schema
+  table: migrations
+
+env:
+  dialect: postgres
+  datasource: user=${DB_USER} password=${DB_PASS} host=${DB_HOST} port=5432 dbname=${DB_NAME} sslmode=disable
+  dir: migrations/schema
+  table: migrations
+
+e2e-test:
+  dialect: postgres
+  datasource: user=postgres password=postgres host=localhost port=5432 dbname=rw_local sslmode=disable
+  dir: migrations/schema
+  table: migrations
